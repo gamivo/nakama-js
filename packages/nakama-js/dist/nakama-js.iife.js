@@ -379,10 +379,10 @@ var nakamajs = (() => {
       if (options.cache === "no-store" || options.cache === "no-cache") {
         var reParamSearch = /([?&])_=[^&]*/;
         if (reParamSearch.test(this.url)) {
-          this.url = this.url.replace(reParamSearch, "$1_=" + (/* @__PURE__ */ new Date()).getTime());
+          this.url = this.url.replace(reParamSearch, "$1_=" + new Date().getTime());
         } else {
           var reQueryString = /\?/;
-          this.url += (reQueryString.test(this.url) ? "&" : "?") + "_=" + (/* @__PURE__ */ new Date()).getTime();
+          this.url += (reQueryString.test(this.url) ? "&" : "?") + "_=" + new Date().getTime();
         }
       }
     }
@@ -567,7 +567,7 @@ var nakamajs = (() => {
   })(b64chs);
   var b64re = /^(?:[A-Za-z\d+\/]{4})*?(?:[A-Za-z\d+\/]{2}(?:==)?|[A-Za-z\d+\/]{3}=?)?$/;
   var _fromCC = String.fromCharCode.bind(String);
-  var _U8Afrom = typeof Uint8Array.from === "function" ? Uint8Array.from.bind(Uint8Array) : (it) => new Uint8Array(Array.prototype.slice.call(it, 0));
+  var _U8Afrom = typeof Uint8Array.from === "function" ? Uint8Array.from.bind(Uint8Array) : (it, fn = (x) => x) => new Uint8Array(Array.prototype.slice.call(it, 0).map(fn));
   var _mkUriSafe = (src) => src.replace(/=/g, "").replace(/[+\/]/g, (m0) => m0 == "+" ? "-" : "_");
   var _tidyB64 = (s) => s.replace(/[^A-Za-z0-9\+\/]/g, "");
   var btoaPolyfill = (bin) => {
@@ -629,19 +629,23 @@ var nakamajs = (() => {
     return bin;
   };
   var _atob = _hasatob ? (asc) => atob(_tidyB64(asc)) : _hasBuffer ? (asc) => Buffer.from(asc, "base64").toString("binary") : atobPolyfill;
-  var _toUint8Array = _hasBuffer ? (a) => _U8Afrom(Buffer.from(a, "base64")) : (a) => _U8Afrom(_atob(a).split("").map((c) => c.charCodeAt(0)));
+  var _toUint8Array = _hasBuffer ? (a) => _U8Afrom(Buffer.from(a, "base64")) : (a) => _U8Afrom(_atob(a), (c) => c.charCodeAt(0));
   var _decode = _hasBuffer ? (a) => Buffer.from(a, "base64").toString("utf8") : _TD ? (a) => _TD.decode(_toUint8Array(a)) : (a) => btou(_atob(a));
   var _unURI = (a) => _tidyB64(a.replace(/[-_]/g, (m0) => m0 == "-" ? "+" : "/"));
   var decode2 = (src) => _decode(_unURI(src));
 
   // utils.ts
+  function isWritable(obj, key) {
+    const desc = Object.getOwnPropertyDescriptor(obj, key) || {};
+    return Boolean(desc.writable);
+  }
   function buildFetchOptions(method, options, bodyJson) {
     const fetchOptions = __spreadValues(__spreadValues({}, { method }), options);
     fetchOptions.headers = __spreadValues({}, options.headers);
     if (typeof XMLHttpRequest !== "undefined") {
       const descriptor = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, "withCredentials");
-      if (!(descriptor == null ? void 0 : descriptor.set)) {
-        fetchOptions.credentials = "cocos-ignore";
+      if (!(descriptor == null ? void 0 : descriptor.set) && isWritable(fetchOptions, "credentials")) {
+        fetchOptions.credentials = "ignore";
       }
     }
     if (!Object.keys(fetchOptions.headers).includes("Accept")) {
@@ -2953,7 +2957,7 @@ var nakamajs = (() => {
       this.created = created;
       this.token = token;
       this.refresh_token = refresh_token;
-      this.created_at = Math.floor((/* @__PURE__ */ new Date()).getTime() / 1e3);
+      this.created_at = Math.floor(new Date().getTime() / 1e3);
       this.update(token, refresh_token);
     }
     isexpired(currenttime) {

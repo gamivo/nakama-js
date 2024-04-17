@@ -1,5 +1,10 @@
 import {encode, decode} from "js-base64"
 
+function isWritable<T extends Object>(obj: T, key: keyof T) {
+    const desc = Object.getOwnPropertyDescriptor(obj, key) || {};
+    return Boolean(desc.writable);
+}
+
 export function buildFetchOptions(method: string, options: any, bodyJson: string) {
     const fetchOptions = {...{ method: method }, ...options};
     fetchOptions.headers = {...options.headers};
@@ -9,8 +14,8 @@ export function buildFetchOptions(method: string, options: any, bodyJson: string
 
         // in Cocos Creator, XMLHttpRequest.withCredentials is not writable, so make the fetch
         // polyfill avoid writing to it.
-        if (!descriptor?.set) {
-            fetchOptions.credentials = 'cocos-ignore'; // string value is arbitrary, cannot be 'omit' or 'include
+        if (!descriptor?.set && isWritable(fetchOptions, 'credentials')) {
+            fetchOptions.credentials = 'ignore'; // string value is arbitrary, cannot be 'omit' or 'include
         }
     }
 
